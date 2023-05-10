@@ -1,4 +1,4 @@
-from geomtry import exterior, get_final_layout
+from geomtry import exterior, get_final_layout, buffer
 
 
 def _room_width_height_march(room, inner, walls, buf_size, append_walls=False, plot=0, bed_bath_data=[]):
@@ -55,18 +55,26 @@ def optimize(inner, bedrooms_lst, bathrooms_lst, door=None, step=0.2, plot=0):
     if plot:
         get_final_layout(inner, bed_bath_data[0], bed_bath_data[1], bed_bath_data[2], buffer_amount=2, plot=plot, fix=False)
 
-    [b.reset() for b in bathrooms_lst]
 
     if plot:
         get_final_layout(inner, bed_bath_data[0], bed_bath_data[1], bed_bath_data[2], buffer_amount=2, plot=plot, fix=False)
 
     walls = []
     walls = march_dims(bedrooms_lst, inner, walls, step, append_walls=True, plot=plot, bed_bath_data=bed_bath_data)
-    walls = march_dims(bathrooms_lst, inner, walls, step, append_walls=True, plot=plot, bed_bath_data=bed_bath_data)
+    # walls = march_dims(bathrooms_lst, inner, walls, step, append_walls=True, plot=plot, bed_bath_data=bed_bath_data)
+
 
     mean_bed_area = sum([b.poly.area for b in bedrooms_lst]) / len(bedrooms_lst)
     mean_bed_min_dim = sum([b.min_dim for b in bedrooms_lst]) / len(bedrooms_lst)
     mean_bed_max_dim = sum([b.max_dim for b in bedrooms_lst]) / len(bedrooms_lst)
+
+    good_bathes = [i for i in bathrooms_lst if i.poly.area < mean_bed_area * 0.7]
+    bad_bathes = [i for i in bathrooms_lst if i not in good_bathes]
+    [b.reset() for b in bad_bathes]
+    for b in good_bathes:
+        b.poly = buffer(b.poly, -2)
+    walls = march_dims(bad_bathes, inner, walls, step, append_walls=True, plot=plot, bed_bath_data=bed_bath_data)
+
 
     for bathroom in bathrooms_lst:
         width, height = bathroom.width, bathroom.height
