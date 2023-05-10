@@ -7,7 +7,7 @@ import geopandas as gpd
 
 
 # for plan in [list(data.keys())[-1]]:
-#     plan= 'plan10.fy'
+#     plan = 'plan11.fy'
 for plan in data:
     bedrooms_centroids = data[plan]['bedroom']
     bathroom_centroids = data[plan]['bathroom']

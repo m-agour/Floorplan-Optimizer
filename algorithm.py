@@ -44,8 +44,8 @@ def optimize(inner, bedrooms_lst, bathrooms_lst, door=None, step=0.2, plot=0):
     walls = exterior(inner, step)
     march_dims(bathrooms_lst, inner, walls, step, plot=plot, bed_bath_data=bed_bath_data)
 
-    bedrooms_lst.sort(key=lambda x: x.max_dim, reverse=False)
-    bathrooms_lst.sort(key=lambda x: x.max_dim, reverse=False)
+    bedrooms_lst.sort(key=lambda x: x.min_dim * x.max_dim, reverse=False)
+    bathrooms_lst.sort(key=lambda x: x.min_dim * x.max_dim, reverse=False)
 
     if plot:
         get_final_layout(inner, bed_bath_data[0], bed_bath_data[1], bed_bath_data[2], buffer_amount=2, plot=plot, fix=False)
