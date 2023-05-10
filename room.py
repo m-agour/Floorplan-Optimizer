@@ -4,7 +4,8 @@ from geomtry import get_box, exterior, to_multi
 
 
 class Room:
-    def __init__(self, center=None, width=1, height=1):
+    def __init__(self, center=None, width=1, height=1, typ='bedroom'):
+        self.type = typ
         self.width = width
         self.height = height
         self.centroid = center
@@ -12,6 +13,10 @@ class Room:
         self.area = 0
         self.max_dim = 0
         self.min_dim = 0
+        self.is_width_min = 0
+        self.backup_max_dim = 0
+        self.backup_min_dim = 0
+        self.backup_is_width_min = 0
         self._update_min_max_dim()
 
     def increase_width(self, amount=0.1):
@@ -61,18 +66,47 @@ class Room:
         self.area = self.poly.area
 
     def _update_min_max_dim(self):
-        self.max_dim = max(self.width, self.height)
-        self.min_dim = min(self.width, self.height)
+        if self.width < self.height:
+            self.max_dim = self.height
+            self.min_dim = self.width
+            self.is_width_min = True
+        else:
+            self.min_dim = self.height
+            self.max_dim = self.width
+            self.is_width_min = False
 
-    def reset(self, reset_max_dim=False):
+    def reset(self, reset_max_dim=False, backup=True):
         self.width = 1
         self.height = 1
         self.poly = get_box(self.centroid, self.width, self.height)
         self.area = self.poly.area
         if reset_max_dim:
             self._update_min_max_dim()
+        if backup:
+            self.backup_min_max()
+
+    def backup_min_max(self):
+        self.backup_min_dim = self.min_dim
+        self.backup_max_dim = self.max_dim
+        self.backup_is_width_min = self.is_width_min
+
+    def restore(self, min_thresh=0, max_thresh=float('inf'), default=5):
+        width, height = (self.backup_min_dim, self.backup_max_dim) if \
+            self.is_width_min else (self.backup_max_dim, self.backup_min_dim)
+        minimum = min(width, height)
+        if minimum < min_thresh or minimum > max_thresh:
+            minimum = default
+        else:
+            minimum /= 2
+
+        if width < min_thresh or width > max_thresh:
+            width = minimum
+        if height < min_thresh or height > max_thresh:
+            height = minimum
+        self.set_width(width)
+        self.set_height(height)
 
 
-def get_rooms(rooms_centroids):
-    rooms_lst = [Room(centroid) for centroid in rooms_centroids]
+def get_rooms(rooms_centroids, typ="bedroom"):
+    rooms_lst = [Room(centroid, typ=typ) for centroid in rooms_centroids]
     return rooms_lst
