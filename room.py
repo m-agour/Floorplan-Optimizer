@@ -1,4 +1,5 @@
 import shapely
+from shapely.affinity import scale
 
 from geomtry import get_box, exterior, to_multi
 
@@ -26,6 +27,13 @@ class Room:
         self._update_min_max_dim()
 
     def increase_height(self, amount=0.1):
+        self.height += amount
+        self.poly = get_box(self.centroid, self.width, self.height)
+        self.area = self.poly.area
+        self._update_min_max_dim()
+
+    def increase_width_height(self, amount=1):
+        self.width += amount
         self.height += amount
         self.poly = get_box(self.centroid, self.width, self.height)
         self.area = self.poly.area
@@ -105,6 +113,22 @@ class Room:
             height = minimum
         self.set_width(width)
         self.set_height(height)
+
+    def expand_until_intersection(self, target, width=1, height=1, increment=1, threshold=0.0):
+        current_polygon = self.poly
+        x_scale, y_scale = 1, 1
+        if width:
+            x_scale = 1 + increment if width else 1
+        if height:
+            y_scale = 1 + increment if height else 1
+        while not current_polygon.intersection(target).area >= threshold:
+            current_polygon = scale(current_polygon, xfact=x_scale, yfact=y_scale, origin='centroid')
+        bounds = current_polygon.bounds
+        self.width, self.height = bounds[2] - bounds[0], bounds[3] - bounds[1]
+        self.poly = current_polygon
+        self.area = current_polygon.area
+        self._update_min_max_dim()
+        return current_polygon
 
 
 def get_rooms(rooms_centroids, typ="bedroom"):

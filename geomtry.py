@@ -187,6 +187,7 @@ def fix_floor_plan(inner_p, bedrooms_lst, bathrooms_lst, door, buffer_amount=2, 
 
 
 def plot_series(series, sleep=1.0):
+
     global plot_i
     ax.clear()
     series.plot(cmap="Dark2", ax=ax)
@@ -198,6 +199,7 @@ def plot_series(series, sleep=1.0):
 
 
 def get_final_layout(inner_p, bedrooms_lst, bathrooms_lst, front, buffer_amount=2, plot=0.0, fix=True):
+    return
     living = buffer(inner_p, -buffer_amount).difference(GeometryCollection(
         [buffer(r.poly, buffer_amount) for r in bedrooms_lst if r.poly] + [buffer(b.poly, buffer_amount) for b in
                                                                            bathrooms_lst if b.poly]).buffer(0))
