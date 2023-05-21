@@ -1,5 +1,6 @@
 import time
 
+# from dims_optimizer.geomtry import exterior, get_final_layout, buffer
 from geomtry import exterior, get_final_layout, buffer
 
 
