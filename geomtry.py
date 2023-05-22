@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 plot_i = 0
 
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 plt.ion()
 fig, ax = plt.subplots()
 plt.show()
@@ -229,7 +229,8 @@ def get_mesh(polygon, texture, height=5.0):
     extruded_mesh.apply_transform(rotation_matrix)
     uv_coordinates = generate_uv_coordinates(extruded_mesh)
 
-    apply_texture_to_mesh(extruded_mesh, texture, uv_coordinates)
+    if texture is not None:
+        apply_texture_to_mesh(extruded_mesh, texture, uv_coordinates)
 
     return extruded_mesh
 
@@ -257,8 +258,12 @@ def extrude_and_save_multipolygon(multi_poly: MultiPolygon, floor, door, height:
 
 
 def load_texture_image(image_path: str):
-    image = Image.open(image_path)
-    return image
+    try:
+        image = Image.open(image_path)
+        return image
+    except IOError:
+        print("Unable to load image")
+        return None
 
 
 def generate_uv_coordinates(mesh: trimesh.Trimesh, repeat_distance: float = 5.0):

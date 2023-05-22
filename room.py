@@ -1,7 +1,7 @@
 import shapely
 from shapely.affinity import scale
 
-from geomtry import get_box, exterior, to_multi
+from dims_optimizer.geomtry import get_box, exterior, to_multi
 
 
 class Room:

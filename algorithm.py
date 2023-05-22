@@ -1,7 +1,7 @@
 import time
 
 # from dims_optimizer.geomtry import exterior, get_final_layout, buffer
-from geomtry import exterior, get_final_layout, buffer
+from dims_optimizer.geomtry import exterior, get_final_layout, buffer
 
 
 def _room_width_height_march(room, inner, walls, buf_size, append_walls=False, plot=0, bed_bath_data=[]):
