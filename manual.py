@@ -9,7 +9,7 @@ import geopandas as gpd
 
 
 for plan in [list(data.keys())[-1]]:
-    plan = 'plan3.fy'
+    plan = 'plan7.fy'
 # for plan in data:
     t = time.time()
     bedrooms_centroids = data[plan]['bedroom']
@@ -42,6 +42,5 @@ for plan in [list(data.keys())[-1]]:
     print(time.time() - t)
 
     extrude_and_save_multipolygon(walls, boundary, door, 27, f"objs/{plan}.obj")
-
 
 
