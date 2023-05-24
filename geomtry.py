@@ -1,10 +1,14 @@
 import time
 
 import matplotlib
+import numpy as np
+from PIL import Image
 from shapely import GeometryCollection, box, MultiPolygon, LineString, unary_union
 from shapely.geometry import Polygon, Point
 import re
 import os
+import trimesh
+from shapely.geometry import MultiPolygon
 
 os.environ['USE_PYGEOS'] = '0'
 import geopandas as gpd
@@ -12,7 +16,7 @@ import matplotlib.pyplot as plt
 
 plot_i = 0
 
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 plt.ion()
 fig, ax = plt.subplots()
 plt.show()
@@ -107,7 +111,7 @@ def get_walls(poly, width=2.5):
     return buffer(poly, width).difference(poly)
 
 
-def fix_floor_plan(inner_p, bedrooms_lst, bathrooms_lst, door, buffer_amount=2, plot=0.0):
+def fix_floor_plan(inner_p, bedrooms_lst, bathrooms_lst, door, buffer_amount=2, plot=0.0, as_series=False):
     living = buffer(inner_p, -buffer_amount).difference(GeometryCollection(
         [buffer(r.poly, buffer_amount) for r in bedrooms_lst if r.poly] + [buffer(b.poly, buffer_amount) for b in
                                                                            bathrooms_lst if b.poly]).buffer(0))
@@ -178,11 +182,14 @@ def fix_floor_plan(inner_p, bedrooms_lst, bathrooms_lst, door, buffer_amount=2, 
     walls = unary_union([living_wall, bed_walls, bath_walls]).buffer(0)
 
     polys = [unary_union(plst) for plst in [[living], [door], buffer(bed_polys, 1), buffer(bath_polys, 1), walls]]
-    series = gpd.GeoSeries(polys)
+    names = ["living", "door", "bedrooms", "bathrooms", "walls"]
+    dict_polys = {name: poly for name, poly in zip(names, polys)}
+    series = gpd.GeoSeries(dict_polys)
 
     if plot:
         plot_series(series, sleep=plot)
-
+    if as_series:
+        return series
     return polys
 
 
@@ -198,6 +205,7 @@ def plot_series(series, sleep=1.0):
 
 
 def get_final_layout(inner_p, bedrooms_lst, bathrooms_lst, front, buffer_amount=2, plot=0.0, fix=True):
+    return
     living = buffer(inner_p, -buffer_amount).difference(GeometryCollection(
         [buffer(r.poly, buffer_amount) for r in bedrooms_lst if r.poly] + [buffer(b.poly, buffer_amount) for b in
                                                                            bathrooms_lst if b.poly]).buffer(0))
@@ -210,3 +218,68 @@ def get_final_layout(inner_p, bedrooms_lst, bathrooms_lst, front, buffer_amount=
     if plot:
         plot_series(series, plot)
     return series
+
+
+def get_mesh(polygon, texture, height=5.0):
+    # Extrude the polygon normally along the Z-axis
+    extruded_mesh = trimesh.creation.extrude_polygon(polygon, height=-height)
+
+    # Rotate the mesh to align the extrusion along the Y-axis
+    rotation_matrix = trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0])
+    extruded_mesh.apply_transform(rotation_matrix)
+    uv_coordinates = generate_uv_coordinates(extruded_mesh)
+
+    if texture is not None:
+        apply_texture_to_mesh(extruded_mesh, texture, uv_coordinates)
+
+    return extruded_mesh
+
+
+def extrude_and_save_multipolygon(multi_poly: MultiPolygon, floor, door, height: float, output_file: str,
+                                  file_type: str = 'obj'):
+    meshes = []
+    texture_image = load_texture_image("textures/images.png")
+    if not isinstance(multi_poly, MultiPolygon):
+        multi_poly = MultiPolygon([multi_poly])
+
+    mesh = get_mesh(floor, texture_image, height=3)
+    meshes.append(mesh)
+    for polygon in multi_poly.geoms:
+        mesh = get_mesh(polygon, texture_image, height=height)
+        meshes.append(mesh)
+    door_mesh = get_mesh(door, texture_image, height=height* 0.8)
+    combined_mesh = trimesh.util.concatenate(meshes)
+
+    with open(output_file, 'wb') as file:
+        exported_data = trimesh.exchange.export.export_mesh(combined_mesh, file_type=file_type, file_obj=output_file)
+        if isinstance(exported_data, str):
+            exported_data = exported_data.encode('utf-8')
+        file.write(exported_data)
+
+
+def load_texture_image(image_path: str):
+    try:
+        image = Image.open(image_path)
+        return image
+    except IOError:
+        print("Unable to load image")
+        return None
+
+
+def generate_uv_coordinates(mesh: trimesh.Trimesh, repeat_distance: float = 5.0):
+    uv_coordinates = []
+
+    for vertex in mesh.vertices:
+        u = vertex[0] / repeat_distance  # X coordinate divided by repeat distance
+        v = vertex[2] / repeat_distance  # Z coordinate divided by repeat distance
+        uv_coordinates.append([u, v])
+
+    return uv_coordinates
+
+
+def apply_texture_to_mesh(mesh: trimesh.Trimesh, texture_image: np.ndarray, uv_coordinates):
+    # Create a SimpleMaterial object with the texture image
+    material = trimesh.visual.material.SimpleMaterial(image=texture_image)
+
+    # Set the mesh's visual material and UV coordinates
+    mesh.visual = trimesh.visual.TextureVisuals(uv=uv_coordinates, material=material)
