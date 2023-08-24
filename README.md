@@ -5,7 +5,8 @@ Here is a draft README for this floor plan optimization repo:
 This repository contains code to optimize the layout and dimensions of rooms for a floorplan layout bounded by a polygon.
 
 
-https://github.com/m-agour/Width-Height-FloorPlan/assets/63170874/62197974-6d9d-4310-b9fe-97ec5b9415fd
+
+https://github.com/m-agour/Floorplan-Optimizer/assets/63170874/8cd5160a-bf4d-4fd4-9cfb-eed85f9e97ff
 
 
 ## Overview
